@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 
 export async function POST(request, { params }) {
   try {
-    const { id } = params;
+    const { id } = await Promise.resolve(params);
     
     if (!id) {
       return NextResponse.json(
@@ -17,7 +17,7 @@ export async function POST(request, { params }) {
     }
     
     // Get the current user from the token
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
     
     if (!token) {

@@ -50,6 +50,7 @@ export default function AllOffersPage() {
           }
           
           const data = await response.json();
+          console.log('Available offers:', data.offers);
           setOffers(data.offers || []);
         } catch (error) {
           console.error('Error fetching offers:', error);
@@ -64,23 +65,28 @@ export default function AllOffersPage() {
 
   const handleApply = async (offerId) => {
     try {
-      const response = await fetch(`/API/offers/${offerId}/apply`, {
+      const response = await fetch(`/API/offerPerformers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ performerId: user.id }),
+        body: JSON.stringify({ offerId }),
       });
       
       if (!response.ok) {
         throw new Error('Failed to apply for offer');
       }
       
-      alert('Successfully applied for this offer!');
       // Refresh offers to update status
       const updatedResponse = await fetch('/API/offers?role=all');
+      if (!updatedResponse.ok) {
+        throw new Error('Failed to refresh offers');
+      }
+      
       const data = await updatedResponse.json();
       setOffers(data.offers || []);
+      
+      alert('Successfully applied for this offer!');
     } catch (error) {
       console.error('Error applying for offer:', error);
       alert('Failed to apply for this offer. Please try again.');
@@ -95,8 +101,49 @@ export default function AllOffersPage() {
     }
   };
 
-  // Filter logic will be implemented later
-  const filteredOffers = offers;
+  // Filter logic based on active tab
+  const filteredOffers = offers.filter(offer => {
+    if (activeTab === 'All') {
+      return true; // Show all offers
+    } else if (activeTab === 'My Active Offers') {
+      // Show offers that are RUNNING and the current user is the accepted performer
+      const isPerformer = offer.performers?.some(p => 
+        p.performerId === user.id && p.isAccepted && 
+        (offer.status === 'RUNNING' || offer.status === 'Running')
+      );
+      return isPerformer;
+    } else if (activeTab === 'My Previous Offers') {
+      // Show offers that are DONE and the current user was the performer
+      const isDoneByUser = offer.performers?.some(p => 
+        p.performerId === user.id && p.isAccepted && 
+        (offer.status === 'DONE' || offer.status === 'Done' || offer.status === 'done')
+      );
+      return isDoneByUser;
+    }
+    return true;
+  });
+  
+  // Log filtered offers for debugging
+  useEffect(() => {
+    if (activeTab === 'My Previous Offers') {
+      console.log('Filtered Previous Offers:', filteredOffers);
+      console.log('All offers with performer ID matching and their statuses:', 
+        offers.filter(o => o.performers?.some(p => p.performerId === user?.id))
+          .map(o => ({ id: o.id, status: o.status, isAccepted: o.performers.find(p => p.performerId === user?.id)?.isAccepted }))
+      );
+    }
+  }, [activeTab, filteredOffers]);
+
+  // Get status color based on status
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'NEW': return { bg: '#f5f5f5', text: '#666' };
+      case 'APPLICATION': return { bg: '#e6f7ff', text: '#1890ff' };
+      case 'RUNNING': return { bg: '#e6f7f0', text: '#0a8050' };
+      case 'DONE': return { bg: '#f0f2f5', text: '#52c41a' };
+      default: return { bg: '#f5f5f5', text: '#666' }; // Default
+    }
+  };
 
   // Show loading state while authentication or data is loading
   if (authLoading || (!authLoading && !user) || loading) {
@@ -197,8 +244,10 @@ export default function AllOffersPage() {
 
         {/* Offer items */}
         {filteredOffers.map(offer => {
-          // Check if performer has already applied (this would need to be part of your offer data)
-          const hasApplied = offer.applications?.some(app => app.performerId === user.id) || false;
+          // Check if performer has already applied for this offer
+          const hasApplied = offer.performers?.some(p => p.performerId === user.id) || false;
+          // Check if the offer accepts new applications (only NEW or APPLICATION status)
+          const canApply = (offer.status === 'NEW' || offer.status === 'APPLICATION') && !hasApplied;
           
           return (
             <div 
@@ -239,34 +288,63 @@ export default function AllOffersPage() {
                   )}
                 </div>
                 <div>
-                  <button 
-                    onClick={() => router.push(`/performer/offerDetails/${offer.id}`)}
-                    style={{ 
-                      padding: '0.5rem 1rem',
-                      backgroundColor: '#7095e6',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      marginRight: '0.5rem',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    View Details
-                  </button>
-                  {/* <button 
-                    onClick={() => handleApply(offer.id)}
-                    disabled={hasApplied}
-                    style={{ 
-                      padding: '0.5rem 1rem',
-                      backgroundColor: hasApplied ? '#aaa' : '#e74c3c',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: hasApplied ? 'default' : 'pointer'
-                    }}
-                  >
-                    {hasApplied ? 'Applied' : 'Apply Now'}
-                  </button> */}
+                  <div style={{ 
+                    backgroundColor: getStatusColor(offer.status || 'NEW').bg,
+                    color: getStatusColor(offer.status || 'NEW').text,
+                    padding: '0.25rem 0.75rem',
+                    borderRadius: '4px',
+                    fontSize: '0.8rem',
+                    fontWeight: 'bold',
+                    marginBottom: '0.5rem',
+                    display: 'inline-block'
+                  }}>
+                    {offer.status || 'NEW'}
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button 
+                      onClick={() => router.push(`/performer/offerDetails/${offer.id}`)}
+                      style={{ 
+                        padding: '0.5rem 1rem',
+                        backgroundColor: '#7095e6',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      View Details
+                    </button>
+                    {canApply && (
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleApply(offer.id);
+                        }}
+                        style={{ 
+                          padding: '0.5rem 1rem',
+                          backgroundColor: '#e74c3c',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Apply Now
+                      </button>
+                    )}
+                    {hasApplied && !canApply && (
+                      <span style={{ 
+                        padding: '0.5rem 1rem',
+                        backgroundColor: '#f5f5f5',
+                        color: '#666',
+                        border: 'none',
+                        borderRadius: '4px',
+                        fontSize: '0.9rem'
+                      }}>
+                        Applied
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 

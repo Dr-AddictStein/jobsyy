@@ -91,14 +91,28 @@ export default function AllOffersPage() {
     }
   };
 
-  const filteredOffers = activeTab === 'All' 
-    ? offers
-    : offers.filter(offer => {
-        // This is a placeholder - in a real app, you'd have a status field
-        // For now, we'll just simulate by considering newer offers as "Running" and older as "Done"
-        const isRunning = new Date(offer.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-        return activeTab === 'Running' ? isRunning : !isRunning;
-      });
+  // Get status color based on status
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'NEW': return { bg: '#f5f5f5', text: '#666' };
+      case 'APPLICATION': return { bg: '#e6f7ff', text: '#1890ff' };
+      case 'RUNNING': return { bg: '#e6f7f0', text: '#0a8050' };
+      case 'DONE': return { bg: '#f0f2f5', text: '#52c41a' };
+      default: return { bg: '#f5f5f5', text: '#666' }; // Default
+    }
+  };
+
+  // Filter offers based on active tab
+  const filteredOffers = offers.filter(offer => {
+    if (activeTab === 'All') {
+      return true; // Show all offers created by this submitter
+    } else if (activeTab === 'Running') {
+      return offer.status === 'RUNNING'; // Show only RUNNING offers
+    } else if (activeTab === 'Done') {
+      return offer.status === 'DONE'; // Show only DONE offers
+    }
+    return true;
+  });
 
   // Show loading state while authentication or data is loading
   if (authLoading || (!authLoading && !user) || loading) {
@@ -223,67 +237,70 @@ export default function AllOffersPage() {
         )}
 
         {/* Offer items */}
-        {filteredOffers.map(offer => {
-          // For demo purposes, consider offers created within the last week as "Running"
-          const status = new Date(offer.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) 
-            ? 'Running' 
-            : 'Done';
-          
-          return (
-            <div 
-              key={offer.id}
-              style={{ 
-                border: '1px solid #e0e0e0',
-                borderRadius: '8px',
-                padding: '1rem',
-                marginBottom: '1rem',
-                cursor: 'pointer'
-              }}
-              onClick={() => router.push(`/submitter/offerDetails/${offer.id}`)}
-            >
-              <div style={{ marginBottom: '0.5rem' }}>
-                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 'normal' }}>
-                  {offer.title}
-                </h3>
+        {filteredOffers.map(offer => (
+          <div 
+            key={offer.id}
+            style={{ 
+              border: '1px solid #e0e0e0',
+              borderRadius: '8px',
+              padding: '1rem',
+              marginBottom: '1rem',
+              cursor: 'pointer'
+            }}
+            onClick={() => router.push(`/submitter/offerDetails/${offer.id}`)}
+          >
+            <div style={{ marginBottom: '0.5rem' }}>
+              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 'normal' }}>
+                {offer.title}
+              </h3>
+            </div>
+            <div style={{ 
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <div>
+                <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>
+                  Offer ID <span style={{ color: '#ff0000' }}>#{offer.id.substring(0, 6)}</span>
+                </p>
+                <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>
+                  Posted by, <span style={{ color: '#4a90e2' }}>{offer.submitter?.name || user?.name || 'Unknown'}</span>
+                </p>
               </div>
-              <div style={{ 
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <div>
-                  <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>
-                    Offer ID <span style={{ color: '#ff0000' }}>#{offer.id.substring(0, 6)}</span>
-                  </p>
-                  <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>
-                    Posted by, <span style={{ color: '#4a90e2' }}>{offer.submitter?.name || user?.name || 'Unknown'}</span>
-                  </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ 
+                  backgroundColor: getStatusColor(offer.status || 'NEW').bg,
+                  color: getStatusColor(offer.status || 'NEW').text,
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '4px',
+                  fontSize: '0.8rem',
+                  fontWeight: 'bold',
+                  display: 'inline-block'
+                }}>
+                  {offer.status || 'NEW'}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <span style={{ fontSize: '0.9rem', color: '#666' }}>{status}</span>
-                  <span style={{ fontSize: '0.9rem', color: '#666' }}>{formatDate(offer.createdAt)}</span>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation(); // Prevent navigation when clicking delete
-                      handleDelete(offer.id);
-                    }}
-                    style={{ 
-                      padding: '0.5rem 1rem',
-                      backgroundColor: 'transparent',
-                      color: '#000',
-                      border: 'none',
-                      fontWeight: 'bold',
-                      fontSize: '0.9rem',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    DELETE
-                  </button>
-                </div>
+                <span style={{ fontSize: '0.9rem', color: '#666' }}>{formatDate(offer.createdAt)}</span>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent navigation when clicking delete
+                    handleDelete(offer.id);
+                  }}
+                  style={{ 
+                    padding: '0.5rem 1rem',
+                    backgroundColor: 'transparent',
+                    color: '#000',
+                    border: 'none',
+                    fontWeight: 'bold',
+                    fontSize: '0.9rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  DELETE
+                </button>
               </div>
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
     </main>
   );

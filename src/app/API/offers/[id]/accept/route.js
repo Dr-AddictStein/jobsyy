@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 
 export async function POST(request, { params }) {
   try {
-    const { id } = params;
+    const { id } = await Promise.resolve(params);
     
     if (!id) {
       return NextResponse.json(
@@ -16,8 +16,7 @@ export async function POST(request, { params }) {
       );
     }
     
-    // Get the current user from the token
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
     
     if (!token) {
@@ -38,7 +37,6 @@ export async function POST(request, { params }) {
       );
     }
     
-    // Get the request body
     const { performerId } = await request.json();
     
     if (!performerId) {
@@ -48,7 +46,6 @@ export async function POST(request, { params }) {
       );
     }
     
-    // Find the offer
     const offer = await prisma.offer.findUnique({
       where: { id },
       select: { submitterId: true },
@@ -61,7 +58,6 @@ export async function POST(request, { params }) {
       );
     }
     
-    // Check if the user is the owner of the offer
     if (offer.submitterId !== userId) {
       return NextResponse.json(
         { error: 'You are not authorized to accept performers for this offer' },
@@ -69,7 +65,6 @@ export async function POST(request, { params }) {
       );
     }
     
-    // Check if the performer exists in the OfferPerformer table
     const performer = await prisma.offerPerformer.findUnique({
       where: {
         offerId_performerId: {
@@ -86,9 +81,15 @@ export async function POST(request, { params }) {
       );
     }
     
-    // Update the OfferPerformer status to accepted
-    // Note: In a real application, you might have a status field in the OfferPerformer model
-    // For now, we'll just simulate acceptance
+    await prisma.offerPerformer.update({
+      where: { id: performer.id },
+      data: { isAccepted: true }
+    });
+    
+    await prisma.offer.update({
+      where: { id },
+      data: { status: 'RUNNING' }
+    });
     
     return NextResponse.json(
       { message: 'Performer accepted successfully' },
