@@ -22,7 +22,7 @@ export default function OfferDetailsPage({ params }) {
     }
     
     // Only redirect if auth loading is complete and user has a role other than submitter
-    if (!authLoading && user && user.role?.toLowerCase() !== 'submitter') {
+    if (!authLoading && user && user.role?.toLowerCase() !== 'admin') {
       const role = user.role?.toLowerCase() || '';
       switch (role) {
         case 'admin':
@@ -39,7 +39,7 @@ export default function OfferDetailsPage({ params }) {
 
   // Fetch offer details when user is authenticated
   useEffect(() => {
-    if (!authLoading && user && user.role?.toLowerCase() === 'submitter') {
+    if (!authLoading && user && user.role?.toLowerCase() === 'admin') {
       const fetchOfferDetails = async () => {
         try {
           const response = await fetch(`/API/offers/${id}`);
@@ -131,7 +131,7 @@ export default function OfferDetailsPage({ params }) {
         throw new Error('Failed to delete offer');
       }
       
-      router.push('/submitter/allOffers');
+      router.push('/admin/allOffers');
     } catch (error) {
       console.error('Error deleting offer:', error);
       alert('Failed to delete offer. Please try again.');
@@ -208,7 +208,7 @@ export default function OfferDetailsPage({ params }) {
           {error || 'Offer not found'}
         </div>
         <button 
-          onClick={() => router.push('/submitter/allOffers')}
+          onClick={() => router.push('/admin/allOffers')}
           style={{ 
             padding: '0.5rem 1rem',
             backgroundColor: '#6c92e6',
@@ -300,7 +300,7 @@ export default function OfferDetailsPage({ params }) {
               marginTop: '1rem'
             }}>
               <button 
-                onClick={() => router.push(`/submitter/editOffer/${offer.id}`)}
+                onClick={() => router.push(`/admin/editOffer/${offer.id}`)}
                 style={{
                   backgroundColor: 'transparent',
                   color: '#333',

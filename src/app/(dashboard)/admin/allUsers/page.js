@@ -2,11 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { format } from 'date-fns';
 import { useAuth } from '@/context/AuthContext';
 
-export default function AllOffersPage() {
-  const [offers, setOffers] = useState([]);
+export default function AllUsersPage() {
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('All');
   const { user, loading: authLoading } = useAuth();
@@ -20,12 +19,12 @@ export default function AllOffersPage() {
       return;
     }
     
-    // Only redirect if auth loading is complete and user has a role other than submitter
+    // Only redirect if auth loading is complete and user has a role other than admin
     if (!authLoading && user && user.role?.toLowerCase() !== 'admin') {
       const role = user.role?.toLowerCase() || '';
       switch (role) {
-        case 'admin':
-          router.push('/admin');
+        case 'submitter':
+          router.push('/submitter');
           break;
         case 'performer':
           router.push('/performer');
@@ -36,80 +35,61 @@ export default function AllOffersPage() {
     }
   }, [user, authLoading, router]);
 
-  // Fetch offers when user is authenticated
+  // Fetch users when user is authenticated
   useEffect(() => {
-    // Only fetch if user is authenticated and is a submitter
+    // Only fetch if user is authenticated and is an admin
     if (!authLoading && user && user.role?.toLowerCase() === 'admin') {
-      const fetchOffers = async () => {
+      const fetchUsers = async () => {
         try {
-          const response = await fetch('/API/offers?role=admin');
+          const response = await fetch('/API/users');
           
           if (!response.ok) {
-            throw new Error('Failed to fetch offers');
+            throw new Error('Failed to fetch users');
           }
           
           const data = await response.json();
-          setOffers(data.offers || []);
+          setUsers(data.users || []);
         } catch (error) {
-          console.error('Error fetching offers:', error);
+          console.error('Error fetching users:', error);
         } finally {
           setLoading(false);
         }
       };
       
-      fetchOffers();
+      fetchUsers();
     }
   }, [user, authLoading]);
 
-  const handleDelete = async (offerId) => {
-    if (!confirm('Are you sure you want to delete this offer?')) {
+  const handleDelete = async (userId) => {
+    if (!confirm('Are you sure you want to delete this user?')) {
       return;
     }
     
     try {
-      const response = await fetch(`/API/offers/${offerId}`, {
+      const response = await fetch(`/API/users/${userId}`, {
         method: 'DELETE',
       });
       
       if (!response.ok) {
-        throw new Error('Failed to delete offer');
+        throw new Error('Failed to delete user');
       }
       
-      // Remove the deleted offer from the state
-      setOffers(offers.filter(offer => offer.id !== offerId));
+      // Remove the deleted user from the state
+      setUsers(users.filter(user => user.id !== userId));
     } catch (error) {
-      console.error('Error deleting offer:', error);
-      alert('Failed to delete offer. Please try again.');
+      console.error('Error deleting user:', error);
+      alert('Failed to delete user. Please try again.');
     }
   };
 
-  const formatDate = (dateString) => {
-    try {
-      return format(new Date(dateString), 'dd.MM.yyyy');
-    } catch (error) {
-      return 'Invalid date';
-    }
-  };
-
-  // Get status color based on status
-  const getStatusColor = (status) => {
-    switch(status) {
-      case 'NEW': return { bg: '#f5f5f5', text: '#666' };
-      case 'APPLICATION': return { bg: '#e6f7ff', text: '#1890ff' };
-      case 'RUNNING': return { bg: '#e6f7f0', text: '#0a8050' };
-      case 'DONE': return { bg: '#f0f2f5', text: '#52c41a' };
-      default: return { bg: '#f5f5f5', text: '#666' }; // Default
-    }
-  };
-
-  // Filter offers based on active tab
-  const filteredOffers = offers.filter(offer => {
+  // Filter users based on active tab
+  const filteredUsers = users.filter(user => {
     if (activeTab === 'All') {
-      return true; // Show all offers created by this submitter
-    } else if (activeTab === 'Running') {
-      return offer.status === 'RUNNING'; // Show only RUNNING offers
-    } else if (activeTab === 'Done') {
-      return offer.status === 'DONE'; // Show only DONE offers
+      return true; // Show all users
+    } else if (activeTab === 'Submitter') {
+      return user.role.toLowerCase() === 'submitter'; // Show only submitters
+    } else if (activeTab === 'Performer') {
+      return user.role.toLowerCase() === 'performer'; // Show only performers
     }
     return true;
   });
@@ -167,17 +147,17 @@ export default function AllOffersPage() {
             </svg>
           </div>
           <div>
-            <h2 style={{ margin: 0, fontSize: '1.2rem' }}>All Offers</h2>
+            <h2 style={{ margin: 0, fontSize: '1.2rem' }}>System Users</h2>
             <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>
-              {offers.length} {offers.length === 1 ? 'Offer' : 'Offers'}
+              {users.length} Users
             </p>
           </div>
         </div>
 
-        {/* Create New Offer button */}
+        {/* Create New User button */}
         <div style={{ marginBottom: '1.5rem' }}>
           <button 
-            onClick={() => router.push('/admin/newOffer')}
+            onClick={() => router.push('/admin/newUser')}
             style={{ 
               backgroundColor: '#e74c3c',
               color: 'white',
@@ -195,7 +175,7 @@ export default function AllOffersPage() {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="white"/>
             </svg>
-            Create New Offer
+            Create New User
           </button>
         </div>
 
@@ -206,7 +186,7 @@ export default function AllOffersPage() {
           gap: '1rem',
           maxWidth: '400px'
         }}>
-          {['All', 'Running', 'Done'].map(tab => (
+          {['All', 'Submitter', 'Performer'].map(tab => (
             <button 
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -229,75 +209,98 @@ export default function AllOffersPage() {
           ))}
         </div>
 
-        {/* No offers state */}
-        {filteredOffers.length === 0 && (
+        {/* No users state */}
+        {filteredUsers.length === 0 && (
           <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
-            No offers found. Create a new offer to get started.
+            No users found.
           </div>
         )}
 
-        {/* Offer items */}
-        {filteredOffers.map(offer => (
+        {/* User items */}
+        {filteredUsers.map(user => (
           <div 
-            key={offer.id}
+            key={user.id}
             style={{ 
               border: '1px solid #e0e0e0',
               borderRadius: '8px',
               padding: '1rem',
               marginBottom: '1rem',
-              cursor: 'pointer'
-            }}
-            onClick={() => router.push(`/admin/offerDetails/${offer.id}`)}
-          >
-            <div style={{ marginBottom: '0.5rem' }}>
-              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 'normal' }}>
-                {offer.title}
-              </h3>
-            </div>
-            <div style={{ 
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center'
-            }}>
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <div style={{ 
+                width: '40px', 
+                height: '40px', 
+                backgroundColor: '#7095e6', 
+                borderRadius: '50%',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginRight: '1rem',
+                overflow: 'hidden'
+              }}>
+                {user.image ? (
+                  <img 
+                    src={user.image} 
+                    alt={user.name} 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                  />
+                ) : (
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="white"/>
+                  </svg>
+                )}
+              </div>
               <div>
-                <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>
-                  Offer ID <span style={{ color: '#ff0000' }}>#{offer.id.substring(0, 6)}</span>
+                <p style={{ margin: 0, fontSize: '1rem', fontWeight: '500' }}>
+                  {user.name}
                 </p>
-                <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>
-                  Posted by, <span style={{ color: '#4a90e2' }}>{offer.submitter?.name || user?.name || 'Unknown'}</span>
+                <p style={{ margin: 0, fontSize: '0.9rem', color: '#ff0000' }}>
+                  #{user.id.substring(0, 6)}
                 </p>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ 
-                  backgroundColor: getStatusColor(offer.status || 'NEW').bg,
-                  color: getStatusColor(offer.status || 'NEW').text,
-                  padding: '0.25rem 0.75rem',
-                  borderRadius: '4px',
-                  fontSize: '0.8rem',
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <span style={{ 
+                fontSize: '0.9rem', 
+                color: '#666', 
+                backgroundColor: '#f5f5f5', 
+                padding: '0.25rem 0.75rem', 
+                borderRadius: '4px'
+              }}>
+                {user.role}
+              </span>
+              <button 
+                onClick={() => router.push(`/admin/editUser/${user.id}`)}
+                style={{ 
+                  padding: '0.5rem 1rem',
+                  backgroundColor: 'transparent',
+                  color: '#000',
+                  border: 'none',
                   fontWeight: 'bold',
-                  display: 'inline-block'
-                }}>
-                  {offer.status || 'NEW'}
-                </div>
-                <span style={{ fontSize: '0.9rem', color: '#666' }}>{formatDate(offer.createdAt)}</span>
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation(); // Prevent navigation when clicking delete
-                    handleDelete(offer.id);
-                  }}
-                  style={{ 
-                    padding: '0.5rem 1rem',
-                    backgroundColor: 'transparent',
-                    color: '#000',
-                    border: 'none',
-                    fontWeight: 'bold',
-                    fontSize: '0.9rem',
-                    cursor: 'pointer'
-                  }}
-                >
-                  DELETE
-                </button>
-              </div>
+                  fontSize: '0.9rem',
+                  cursor: 'pointer'
+                }}
+              >
+                EDIT
+              </button>
+              <button 
+                onClick={() => handleDelete(user.id)}
+                style={{ 
+                  padding: '0.5rem 1rem',
+                  backgroundColor: 'transparent',
+                  color: '#000',
+                  border: 'none',
+                  fontWeight: 'bold',
+                  fontSize: '0.9rem',
+                  cursor: 'pointer'
+                }}
+              >
+                DELETE
+              </button>
             </div>
           </div>
         ))}

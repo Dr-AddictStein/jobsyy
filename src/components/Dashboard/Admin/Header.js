@@ -47,19 +47,20 @@ export default function Navbar() {
         </div>
       </nav>
       {user?.role === 'submitter' && <div className={styles.navLinks}>
-        <Link href="/submitter/profile" onClick={(e) => handleNavigation(e, '/submitter/profile')}>My Profile</Link>
         <Link href="/submitter" onClick={(e) => handleNavigation(e, '/submitter')}>Dashboard</Link>
+        <Link href="/submitter/profile" onClick={(e) => handleNavigation(e, '/submitter/profile')}>My Profile</Link>
         <Link href="/submitter/allOffers" onClick={(e) => handleNavigation(e, '/submitter/allOffers')}>My Offers</Link>
         <Link href="/submitter/newOffer" onClick={(e) => handleNavigation(e, '/submitter/newOffer')}>New Offer</Link>
       </div>}
       {user?.role === 'performer' && <div className={styles.navLinks}>
-        <Link href="/performer/profile" onClick={(e) => handleNavigation(e, '/performer/profile')}>My Profile</Link>
         <Link href="/performer" onClick={(e) => handleNavigation(e, '/performer')}>Dashboard</Link>
+        <Link href="/performer/profile" onClick={(e) => handleNavigation(e, '/performer/profile')}>My Profile</Link>
         <Link href="/performer/allOffers" onClick={(e) => handleNavigation(e, '/performer/allOffers')}>Offers</Link>
       </div>}
       {user?.role === 'admin' && <div className={styles.navLinks}>
-        <Link href="/admin/profile" onClick={(e) => handleNavigation(e, '/admin/profile')}>My Profile</Link>
         <Link href="/admin" onClick={(e) => handleNavigation(e, '/admin')}>Dashboard</Link>
+        <Link href="/admin/profile" onClick={(e) => handleNavigation(e, '/admin/profile')}>My Profile</Link>
+        <Link href="/admin/profile" onClick={(e) => handleNavigation(e, '/admin/allUsers')}>All Profiles</Link>
         <Link href="/admin/allOffers" onClick={(e) => handleNavigation(e, '/admin/allOffers')}>Offers</Link>
       </div>}
     </div>

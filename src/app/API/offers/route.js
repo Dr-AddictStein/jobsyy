@@ -124,7 +124,7 @@ export async function GET(request) {
     } else if (role === 'performer') {
       // Get offers where the current user is a performer
       offers = await prisma.offer.findMany({});
-    } else if (role === 'all') {
+    } else if (role === 'admin') {
       // Get ALL offers for performers to browse
       offers = await prisma.offer.findMany({});
     }
