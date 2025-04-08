@@ -43,7 +43,7 @@ export default function AllOffersPage() {
       const fetchOffers = async () => {
         try {
           // For performers, fetch ALL offers from the database with a special query parameter
-          const response = await fetch('/API/offers?role=all');
+          const response = await fetch('/API/offers?role=performer');
           
           if (!response.ok) {
             throw new Error('Failed to fetch offers');
