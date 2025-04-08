@@ -65,7 +65,7 @@ export async function POST(request) {
 export async function GET(request) {
   try {
     // Get the current user from the token
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
     
     if (!token) {
@@ -123,36 +123,10 @@ export async function GET(request) {
       });
     } else if (role === 'performer') {
       // Get offers where the current user is a performer
-      offers = await prisma.offer.findMany({
-        where: {
-          performers: {
-            some: {
-              performerId: userId,
-            },
-          },
-        },
-        include: {
-          submitter: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          performers: {
-            include: {
-              performer: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
-            },
-          },
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      });
+      offers = await prisma.offer.findMany({});
+    } else if (role === 'all') {
+      // Get ALL offers for performers to browse
+      offers = await prisma.offer.findMany({});
     }
     
     return NextResponse.json({ offers });

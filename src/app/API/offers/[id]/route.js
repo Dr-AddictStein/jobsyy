@@ -17,7 +17,7 @@ export async function DELETE(request, { params }) {
     }
     
     // Get the current user from the token
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
     
     if (!token) {
@@ -86,7 +86,9 @@ export async function DELETE(request, { params }) {
 
 export async function GET(request, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
+    const { searchParams } = new URL(request.url);
+    const includeSubmitter = searchParams.get('includeSubmitter') === 'true';
     
     if (!id) {
       return NextResponse.json(
@@ -96,7 +98,7 @@ export async function GET(request, { params }) {
     }
     
     // Get the current user from the token
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
     
     if (!token) {
@@ -117,27 +119,29 @@ export async function GET(request, { params }) {
       );
     }
     
-    // Find the offer
+    // Find the offer with submitter details if requested
     const offer = await prisma.offer.findUnique({
       where: { id },
       include: {
-        submitter: {
+        submitter: includeSubmitter ? {
           select: {
             id: true,
             name: true,
-          },
-        },
+            email: true,
+            image: true
+          }
+        } : false,
         performers: {
           include: {
             performer: {
               select: {
                 id: true,
-                name: true,
-              },
-            },
-          },
-        },
-      },
+                name: true
+              }
+            }
+          }
+        }
+      }
     });
     
     if (!offer) {

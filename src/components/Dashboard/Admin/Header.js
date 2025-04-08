@@ -5,11 +5,13 @@ import styles from '@/styles/Dashboard/Admin/Header.module.css';
 import { useUser } from '@/hooks/useUser';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Navbar() {
   const { user } = useUser();
   const { logout } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     if (user) {
@@ -17,11 +19,16 @@ export default function Navbar() {
     }
   }, [user]);
   
+  const handleNavigation = useCallback((e, href) => {
+    e.preventDefault();
+    router.push(href);
+  }, [router]);
+  
   return (
     <div className={styles.navWrapper}>
       <nav className={styles.Header}>
         <div className={styles.left}>
-          <Link href="/submitter">
+          <Link href="/submitter" onClick={(e) => handleNavigation(e, '/submitter')}>
             <Image src="/Logotipe.png" alt="JobAdys Logo" width={120} height={40} />
           </Link>
           <div className={styles.searchContainer}>
@@ -37,10 +44,15 @@ export default function Navbar() {
         </div>
       </nav>
       {user?.role === 'submitter' && <div className={styles.navLinks}>
-        <Link href="/submitter/profile">My Profile</Link>
-        <Link href="/submitter">Dashboard</Link>
-        <Link href="/submitter/allOffers">My Offers</Link>
-        <Link href="/submitter/newOffer">New Offer</Link>
+        <Link href="/submitter/profile" onClick={(e) => handleNavigation(e, '/submitter/profile')}>My Profile</Link>
+        <Link href="/submitter" onClick={(e) => handleNavigation(e, '/submitter')}>Dashboard</Link>
+        <Link href="/submitter/allOffers" onClick={(e) => handleNavigation(e, '/submitter/allOffers')}>My Offers</Link>
+        <Link href="/submitter/newOffer" onClick={(e) => handleNavigation(e, '/submitter/newOffer')}>New Offer</Link>
+      </div>}
+      {user?.role === 'performer' && <div className={styles.navLinks}>
+        <Link href="/performer/profile" onClick={(e) => handleNavigation(e, '/performer/profile')}>My Profile</Link>
+        <Link href="/performer" onClick={(e) => handleNavigation(e, '/performer')}>Dashboard</Link>
+        <Link href="/performer/allOffers" onClick={(e) => handleNavigation(e, '/performer/allOffers')}>Offers</Link>
       </div>}
     </div>
   );
