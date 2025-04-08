@@ -13,20 +13,27 @@ export function AuthProvider({ children }) {
 
   // Load user data from cookies on initial render
   useEffect(() => {
-    const storedUser = Cookies.get('user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error('Error parsing user data from cookie:', error);
-        Cookies.remove('user');
+    const loadUserFromCookie = () => {
+      const storedUser = Cookies.get('user');
+      if (storedUser) {
+        try {
+          const userData = JSON.parse(storedUser);
+          setUser(userData);
+          return userData;
+        } catch (error) {
+          console.error('Error parsing user data from cookie:', error);
+          Cookies.remove('user');
+        }
       }
-    }
+      return null;
+    };
+
+    loadUserFromCookie();
     setLoading(false);
   }, []);
 
   // Login function
-  const login = (responseData) => {
+  const login = async (responseData) => {
     // Store only the user object from the response
     const userData = responseData.user;
     
@@ -38,6 +45,15 @@ export function AuthProvider({ children }) {
     setUser(userData);
     // Store user data in a cookie that expires in 7 days
     Cookies.set('user', JSON.stringify(userData), { expires: 7, path: '/' });
+    
+    // Redirect based on user role
+    if (userData.role.toLowerCase() === 'submitter') {
+      router.push('/submitter');
+    } else if (userData.role.toLowerCase() === 'performer') {
+      router.push('/performer');
+    } else if (userData.role.toLowerCase() === 'admin') {
+      router.push('/admin');
+    }
   };
 
   // Update user function

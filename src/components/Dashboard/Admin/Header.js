@@ -6,12 +6,13 @@ import { useUser } from '@/hooks/useUser';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 import { useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 export default function Navbar() {
-  const { user } = useUser();
+  const { user, loading } = useUser();
   const { logout } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (user) {
@@ -21,8 +22,10 @@ export default function Navbar() {
   
   const handleNavigation = useCallback((e, href) => {
     e.preventDefault();
-    router.push(href);
-  }, [router]);
+    if (pathname !== href) {
+      router.push(href);
+    }
+  }, [router, pathname]);
   
   return (
     <div className={styles.navWrapper}>

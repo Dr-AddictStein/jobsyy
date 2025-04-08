@@ -1,16 +1,14 @@
-// src/app/layout.js
+// src/app/(dashboard)/submitter/layout.js
 export const metadata = {
-    title: 'JobAdys',
-    description: 'JobAdys freelancing platform',
-  };
-  
-  export default function RootLayout({ children }) {
-    return (
-      <html lang="en">
-        <body>
-          {children}
-        </body>
-      </html>
-    );
-  }
+  title: 'JobAdys - Submitter',
+  description: 'JobAdys freelancing platform for submitters',
+};
+
+export default function SubmitterLayout({ children }) {
+  return (
+    <div className="submitter-layout">
+      {children}
+    </div>
+  );
+}
   

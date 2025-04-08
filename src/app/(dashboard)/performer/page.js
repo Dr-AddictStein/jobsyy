@@ -3,11 +3,14 @@
 import Image from "next/image";
 import { useUser } from '@/hooks/useUser';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
-export default function SubmitterDashboardPage() {
-  const { user, name } = useUser();
+export default function PerformerDashboardPage() {
+  const { user, name, loading } = useUser();
   const [currentDateTime, setCurrentDateTime] = useState('');
   const [loginLogs, setLoginLogs] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
   
   useEffect(() => {
     // Format current date for display
@@ -20,11 +23,17 @@ export default function SubmitterDashboardPage() {
     };
     setCurrentDateTime(now.toLocaleDateString('en-US', options));
     
-    // Fetch login logs when user is available
-    if (user?.id) {
-      fetchLoginLogs(user.id);
+    // Check if the user data is loaded and the role is performer
+    if (!loading) {
+      if (user?.id) {
+        fetchLoginLogs(user.id);
+        setIsLoading(false);
+      } else if (!user) {
+        // Redirect if no user data (not logged in)
+        router.push('/auth/login');
+      }
     }
-  }, [user]);
+  }, [user, loading, router]);
 
   const fetchLoginLogs = async (userId) => {
     try {
@@ -52,6 +61,21 @@ export default function SubmitterDashboardPage() {
     
     return `[${hours}:${minutes}:${seconds} , ${day}.${month}.${year}]`;
   };
+
+  // Show loading indicator while checking user status
+  if (loading || isLoading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh', 
+        fontFamily: 'system-ui, -apple-system, sans-serif' 
+      }}>
+        <p>Loading dashboard...</p>
+      </div>
+    );
+  }
 
   return (
     <main style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
