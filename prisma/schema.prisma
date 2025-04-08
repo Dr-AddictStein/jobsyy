@@ -7,6 +7,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum OfferStatus {
+  NEW
+  APPLICATION
+  RUNNING
+  DONE
+}
+
 model User {
   id              String           @id @default(cuid())
   name            String
@@ -27,6 +34,7 @@ model Offer {
   id          String           @id @default(cuid())
   title       String
   description String
+  status      OfferStatus      @default(NEW)
   submitterId String
   submitter   User             @relation("SubmittedOffers", fields: [submitterId], references: [id])
   performers  OfferPerformer[]
@@ -35,13 +43,16 @@ model Offer {
 }
 
 model OfferPerformer {
-  id          String   @id @default(cuid())
-  offerId     String
-  performerId String
-  offer       Offer    @relation(fields: [offerId], references: [id])
-  performer   User     @relation("PerformedOffers", fields: [performerId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                      String   @id @default(cuid())
+  offerId                 String
+  performerId             String
+  isAccepted              Boolean  @default(false)
+  performerCompletedTask  Boolean  @default(false)
+  submitterCompletedTask  Boolean  @default(false)
+  offer                   Offer    @relation(fields: [offerId], references: [id])
+  performer               User     @relation("PerformedOffers", fields: [performerId], references: [id])
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
 
   @@unique([offerId, performerId])
 }
