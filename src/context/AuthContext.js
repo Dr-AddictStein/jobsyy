@@ -40,6 +40,18 @@ export function AuthProvider({ children }) {
     Cookies.set('user', JSON.stringify(userData), { expires: 7, path: '/' });
   };
 
+  // Update user function
+  const updateUser = (userData) => {
+    if (!userData) {
+      console.error('No user data provided for update');
+      return;
+    }
+    
+    setUser(userData);
+    // Update user data in the cookie
+    Cookies.set('user', JSON.stringify(userData), { expires: 7, path: '/' });
+  };
+
   // Logout function
   const logout = async () => {
     try {
@@ -58,7 +70,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, updateUser, loading }}>
       {children}
     </AuthContext.Provider>
   );

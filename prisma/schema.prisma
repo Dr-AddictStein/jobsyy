@@ -8,14 +8,42 @@ datasource db {
 }
 
 model User {
-  id          String     @id @default(cuid())
-  name        String
-  email       String     @unique
-  password    String
-  role        String
-  dateOfBirth String?
-  createdAt   DateTime   @default(now())
-  loginLogs   LoginLog[]
+  id              String           @id @default(cuid())
+  name            String
+  email           String           @unique
+  password        String
+  role            String
+  dateOfBirth     String?
+  image           String?
+  bio             String?
+  phone           String?
+  createdAt       DateTime         @default(now())
+  loginLogs       LoginLog[]
+  submittedOffers Offer[]          @relation("SubmittedOffers")
+  performedOffers OfferPerformer[] @relation("PerformedOffers")
+}
+
+model Offer {
+  id          String           @id @default(cuid())
+  title       String
+  description String
+  submitterId String
+  submitter   User             @relation("SubmittedOffers", fields: [submitterId], references: [id])
+  performers  OfferPerformer[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model OfferPerformer {
+  id          String   @id @default(cuid())
+  offerId     String
+  performerId String
+  offer       Offer    @relation(fields: [offerId], references: [id])
+  performer   User     @relation("PerformedOffers", fields: [performerId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([offerId, performerId])
 }
 
 model LoginLog {

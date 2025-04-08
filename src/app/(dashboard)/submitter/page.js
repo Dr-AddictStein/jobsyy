@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 export default function SubmitterDashboardPage() {
   const { user, name } = useUser();
   const [currentDateTime, setCurrentDateTime] = useState('');
-  const [loginTime, setLoginTime] = useState('');
+  const [loginLogs, setLoginLogs] = useState([]);
   
   useEffect(() => {
     // Format current date for display
@@ -20,16 +20,38 @@ export default function SubmitterDashboardPage() {
     };
     setCurrentDateTime(now.toLocaleDateString('en-US', options));
     
-    // Create login time format
-    const hours = now.getHours().toString().padStart(2, '0');
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    const seconds = now.getSeconds().toString().padStart(2, '0');
-    const day = now.getDate().toString().padStart(2, '0');
-    const month = (now.getMonth() + 1).toString().padStart(2, '0');
-    const year = now.getFullYear();
+    // Fetch login logs when user is available
+    if (user?.id) {
+      fetchLoginLogs(user.id);
+    }
+  }, [user]);
+
+  const fetchLoginLogs = async (userId) => {
+    try {
+      const response = await fetch(`/API/login-logs?userId=${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setLoginLogs(data);
+      } else {
+        console.error('Failed to fetch login logs');
+      }
+    } catch (error) {
+      console.error('Error fetching login logs:', error);
+    }
+  };
+
+  // Function to format login time
+  const formatLoginTime = (date) => {
+    const d = new Date(date);
+    const hours = d.getHours().toString().padStart(2, '0');
+    const minutes = d.getMinutes().toString().padStart(2, '0');
+    const seconds = d.getSeconds().toString().padStart(2, '0');
+    const day = d.getDate().toString().padStart(2, '0');
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    const year = d.getFullYear();
     
-    setLoginTime(`[${hours}:${minutes}:${seconds} , ${day}.${month}.${year}]`);
-  }, []);
+    return `[${hours}:${minutes}:${seconds} , ${day}.${month}.${year}]`;
+  };
 
   return (
     <main style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
@@ -45,8 +67,15 @@ export default function SubmitterDashboardPage() {
           boxShadow: '0 0 5px rgba(0,0,0,0.1)' 
         }}>
           <h3 style={{ margin: '0 0 0.5rem', fontWeight: '600' }}>System notification</h3>
-          <p style={{ margin: '0.5rem 0', fontSize: '0.95rem' }}>- Sing in {loginTime} from Slovakia,Bratislava by next ip:192.168.1.1</p>
-          <p style={{ margin: '0.5rem 0', fontSize: '0.95rem' }}>- Sing in {loginTime} from Slovakia,Bratislava by next ip:192.168.1.1</p>
+          {loginLogs.length > 0 ? (
+            loginLogs.map((log, index) => (
+              <p key={log.id || index} style={{ margin: '0.5rem 0', fontSize: '0.95rem' }}>
+                - Sign in {formatLoginTime(log.createdAt)}
+              </p>
+            ))
+          ) : (
+            <p style={{ margin: '0.5rem 0', fontSize: '0.95rem' }}>No recent login activities</p>
+          )}
         </div>
       </div>
       
