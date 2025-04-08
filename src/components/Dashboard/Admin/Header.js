@@ -36,12 +36,12 @@ export default function Navbar() {
           <button onClick={logout} className={styles.logoutButton}>Logout</button>
         </div>
       </nav>
-      <div className={styles.navLinks}>
+      {user?.role === 'submitter' && <div className={styles.navLinks}>
         <Link href="/submitter/profile">My Profile</Link>
         <Link href="/submitter">Dashboard</Link>
-        <Link href="/submitter/allOffers">All Offers</Link>
-        <Link href="/submitter/newOffer">Create New Offer</Link>
-      </div>
+        <Link href="/submitter/allOffers">My Offers</Link>
+        <Link href="/submitter/newOffer">New Offer</Link>
+      </div>}
     </div>
   );
 }
